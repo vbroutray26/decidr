@@ -26,7 +26,7 @@ export default function Processing() {
   }, [navigate]);
 
   if (!decision || matched.length === 0) {
-    return <Navigate to="/decision/new" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

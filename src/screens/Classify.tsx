@@ -21,7 +21,7 @@ export default function Classify() {
   const navigate = useNavigate();
   const { decision, updateDecision, matchNow } = useDecision();
 
-  if (!decision) return <Navigate to="/decision/new" replace />;
+  if (!decision) return <Navigate to="/" replace />;
 
   const rows: { key: string; label: string; content: ReactNode }[] = [
     {
@@ -88,7 +88,7 @@ export default function Classify() {
   return (
     <div style={{ ...screenStyle, minHeight: "100%" }} className="rise">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <button onClick={() => navigate("/decision/new")} style={backButtonStyle} aria-label="Back to capture">
+        <button onClick={() => navigate("/")} style={backButtonStyle} aria-label="Back to capture">
           ←
         </button>
         <span style={uppercaseLabel}>Step 2 · Classification</span>

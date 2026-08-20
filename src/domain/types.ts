@@ -139,3 +139,15 @@ export interface SavedDecision {
   modelNames: string[];
   leaning: string;
 }
+
+/**
+ * A local device profile — not an authenticated account. There's no backend,
+ * so this only personalizes the app and separates saved-decision history
+ * between a few people sharing one device; it isn't a security boundary.
+ */
+export interface UserProfile {
+  id: string;
+  name: string;
+  email?: string;
+  createdAt: string;
+}

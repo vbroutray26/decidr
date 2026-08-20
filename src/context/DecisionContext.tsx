@@ -1,10 +1,11 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { structureDecision, decisionTitle } from "../domain/structure";
 import { matchModels } from "../domain/match";
 import { pickBiases } from "../domain/biases";
 import { defaultInputsFor, computeLean } from "../domain/apply";
 import { synthesize } from "../domain/synthesize";
 import { appendHistory, loadHistory, newDecisionId } from "../store/history";
+import { useAuth } from "./AuthContext";
 import type { BiasFlag, DecisionObject, Lean, MatchedModel, ModelUserInputs, SavedDecision } from "../domain/types";
 
 interface DecisionState {
@@ -37,16 +38,20 @@ interface DecisionState {
 const DecisionContext = createContext<DecisionState | null>(null);
 
 export function DecisionProvider({ children }: { children: ReactNode }) {
-  const [rawText, setRawText] = useState(
-    "Should I take the job offer in Singapore, or stay and wait for my promotion?",
-  );
+  const { currentProfile } = useAuth();
+  const [rawText, setRawText] = useState("");
   const [decision, setDecision] = useState<DecisionObject | null>(null);
   const [matched, setMatched] = useState<MatchedModel[]>([]);
   const [biasFlags, setBiasFlags] = useState<BiasFlag[]>([]);
   const [inputsByModelId, setInputsByModelId] = useState<Record<string, ModelUserInputs>>({});
   const [activeModelId, setActiveModelId] = useState<string | null>(null);
   const [checkedBiases, setCheckedBiases] = useState<Record<string, boolean>>({});
-  const [history, setHistory] = useState<SavedDecision[]>(() => loadHistory());
+  const [history, setHistory] = useState<SavedDecision[]>([]);
+
+  // Saved decisions are scoped per local profile — reload whenever the signed-in profile changes.
+  useEffect(() => {
+    setHistory(currentProfile ? loadHistory(currentProfile.id) : []);
+  }, [currentProfile]);
 
   const structureNow = (): DecisionObject => {
     const d = structureDecision(rawText);
@@ -85,6 +90,7 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
 
   const saveCurrentDecision = (): SavedDecision => {
     if (!decision) throw new Error("No decision to save yet");
+    if (!currentProfile) throw new Error("No profile signed in");
     const entries = matched.map((m) => ({ matched: m, lean: leanFor(m.model.id) }));
     const synthesis = synthesize(decision, entries);
     const entry: SavedDecision = {
@@ -95,7 +101,7 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
       modelNames: matched.map((m) => m.model.name),
       leaning: synthesis.leaning,
     };
-    setHistory(appendHistory(entry));
+    setHistory(appendHistory(currentProfile.id, entry));
     return entry;
   };
 
@@ -131,7 +137,7 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
       startNew,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rawText, decision, matched, biasFlags, inputsByModelId, activeModelId, checkedBiases, history],
+    [rawText, decision, matched, biasFlags, inputsByModelId, activeModelId, checkedBiases, history, currentProfile],
   );
 
   return <DecisionContext.Provider value={value}>{children}</DecisionContext.Provider>;

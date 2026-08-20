@@ -1,10 +1,15 @@
-import { Link } from "react-router-dom";
+import { useCallback, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ACCENT, screenStyle, uppercaseLabel } from "../theme";
 import { MODELS } from "../domain/models";
 import { relativeTime } from "../store/history";
+import { initials } from "../store/auth";
 import { useDecision } from "../context/DecisionContext";
+import { useAuth } from "../context/AuthContext";
+import { useSpeechToText } from "../hooks/useSpeechToText";
 
 const WEEKDAY = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
+const PROMPTS = ["What are you weighing it against?", "What's the deadline?", "What would make it easy?"];
 
 function dayOfYear(d: Date): number {
   const start = new Date(d.getFullYear(), 0, 0);
@@ -15,25 +20,66 @@ function dayOfYear(d: Date): number {
 const MODEL_OF_THE_DAY = MODELS[dayOfYear(new Date()) % MODELS.length];
 
 export default function Home() {
-  const { history } = useDecision();
+  const navigate = useNavigate();
+  const { history, rawText, setRawText, structureNow } = useDecision();
+  const { currentProfile, signOut } = useAuth();
   const recent = history.slice(0, 2);
+  const canContinue = rawText.trim().length > 0;
+
+  const baseTextRef = useRef("");
+  const handleSpeechUpdate = useCallback(
+    (transcript: string) => {
+      const base = baseTextRef.current;
+      setRawText(base && transcript ? `${base} ${transcript}` : base || transcript);
+    },
+    [setRawText],
+  );
+  const { listening, start, stop, supported } = useSpeechToText(handleSpeechUpdate);
+
+  const beginListening = () => {
+    baseTextRef.current = rawText;
+    start();
+  };
+
+  const handleContinue = () => {
+    if (!canContinue) return;
+    if (listening) stop();
+    structureNow();
+    navigate("/decision/classify");
+  };
+
+  const switchProfile = () => {
+    signOut();
+    navigate("/login");
+  };
 
   return (
     <div style={{ ...screenStyle, padding: "28px 22px 34px", gap: 26 }} className="rise">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={uppercaseLabel}>{WEEKDAY}</span>
-        <span
-          style={{
-            padding: "4px 10px",
-            border: "1px solid var(--gray-700)",
-            borderRadius: 999,
-            fontSize: 11,
-            fontWeight: 600,
-            color: "var(--gray-300)",
-          }}
-        >
-          3 credits
-        </span>
+        {currentProfile && (
+          <button
+            onClick={switchProfile}
+            aria-label={`Signed in as ${currentProfile.name}. Switch profile.`}
+            title="Switch profile"
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: ACCENT,
+              color: "var(--gray-950)",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {initials(currentProfile.name)}
+          </button>
+        )}
       </div>
 
       <h1
@@ -51,46 +97,115 @@ export default function Home() {
         <span style={{ color: "var(--gray-400)" }}>Tell me the decision, I'll bring the models.</span>
       </h1>
 
-      <Link
-        to="/decision/new"
+      <div
         style={{
-          textAlign: "left",
           width: "100%",
           background: "var(--d-raised)",
           border: "1px solid var(--gray-700)",
           borderRadius: 16,
-          padding: "18px 18px 16px",
+          padding: "16px 16px 14px",
           display: "flex",
           flexDirection: "column",
-          gap: 16,
-          cursor: "pointer",
-          color: "inherit",
-          fontFamily: "inherit",
-          textDecoration: "none",
+          gap: 14,
         }}
       >
-        <span style={{ fontSize: 16, fontWeight: 350, color: "var(--gray-400)" }}>Should I take the job offer in…</span>
-        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".02em", color: ACCENT }}>Start typing</span>
-          <span
+        <textarea
+          value={rawText}
+          onChange={(e) => setRawText(e.target.value)}
+          placeholder="Should I take the job offer in Singapore, or stay and wait for my promotion?"
+          rows={4}
+          style={{
+            background: "none",
+            border: "none",
+            outline: "none",
+            resize: "vertical",
+            width: "100%",
+            fontFamily: "inherit",
+            fontSize: 16,
+            fontWeight: 350,
+            lineHeight: 1.5,
+            color: "var(--gray-50)",
+            minHeight: 90,
+          }}
+        />
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {PROMPTS.map((p) => (
+            <span
+              key={p}
+              style={{
+                padding: "7px 11px",
+                border: "1px solid var(--gray-800)",
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 350,
+                color: "var(--gray-300)",
+              }}
+            >
+              {p}
+            </span>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <button
+            onPointerDown={supported ? beginListening : undefined}
+            onPointerUp={supported ? stop : undefined}
+            onPointerLeave={supported ? stop : undefined}
+            onPointerCancel={supported ? stop : undefined}
+            disabled={!supported}
+            title={supported ? "Hold to speak" : "Voice input isn't supported in this browser"}
+            aria-label="Hold to speak"
             style={{
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               borderRadius: "50%",
-              background: ACCENT,
+              border: `1px solid ${listening ? ACCENT : "var(--gray-700)"}`,
+              background: listening ? "rgba(255,164,60,.14)" : "var(--d-surface)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              cursor: supported ? "pointer" : "not-allowed",
+              opacity: supported ? 1 : 0.4,
+              flex: "none",
+              touchAction: "none",
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#151517" strokeWidth="2.2" strokeLinecap="round">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={listening ? ACCENT : "#8b8d90"} strokeWidth="1.8" strokeLinecap="round">
               <path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" />
               <path d="M5 11a7 7 0 0 0 14 0" />
               <path d="M12 18v3" />
             </svg>
+          </button>
+
+          <span style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: 350, color: listening ? ACCENT : "var(--gray-300)" }}>
+            {listening ? "Listening…" : supported ? "Hold the mic to speak" : "Type your decision above"}
           </span>
-        </span>
-      </Link>
+
+          <button
+            onClick={handleContinue}
+            disabled={!canContinue}
+            aria-label="Continue"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              border: "none",
+              background: canContinue ? ACCENT : "var(--gray-700)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: canContinue ? "pointer" : "not-allowed",
+              flex: "none",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={canContinue ? "#151517" : "#8b8d90"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="M13 6l6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <span style={uppercaseLabel}>Model of the day</span>

@@ -10,7 +10,7 @@ export default function Brief() {
   const navigate = useNavigate();
   const { decision, matched, leanFor, saveCurrentDecision } = useDecision();
 
-  if (!decision || matched.length === 0) return <Navigate to="/decision/new" replace />;
+  if (!decision || matched.length === 0) return <Navigate to="/" replace />;
 
   const entries = matched.map((m) => ({ matched: m, lean: leanFor(m.model.id) }));
   const synthesis = synthesize(decision, entries);

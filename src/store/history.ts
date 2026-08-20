@@ -1,10 +1,14 @@
 import type { SavedDecision } from "../domain/types";
 
-const KEY = "decidr.history.v1";
+function historyKey(profileId: string): string {
+  return `decidr.history.v1.${profileId}`;
+}
 
-export function loadHistory(): SavedDecision[] {
+/** Saved decisions are scoped per local profile, so a few people sharing one
+ * device each see only their own history. */
+export function loadHistory(profileId: string): SavedDecision[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(historyKey(profileId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as SavedDecision[]) : [];
@@ -13,9 +17,9 @@ export function loadHistory(): SavedDecision[] {
   }
 }
 
-export function appendHistory(entry: SavedDecision): SavedDecision[] {
-  const all = [entry, ...loadHistory()];
-  localStorage.setItem(KEY, JSON.stringify(all));
+export function appendHistory(profileId: string, entry: SavedDecision): SavedDecision[] {
+  const all = [entry, ...loadHistory(profileId)];
+  localStorage.setItem(historyKey(profileId), JSON.stringify(all));
   return all;
 }
 

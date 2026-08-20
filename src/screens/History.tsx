@@ -15,7 +15,7 @@ export default function History() {
           <span style={{ fontSize: 14, fontWeight: 350, lineHeight: 1.6, color: "var(--gray-300)" }}>
             Nothing saved yet — walk a decision through to a brief and it'll show up here.
           </span>
-          <Link to="/decision/new" style={{ ...ctaStyle, textDecoration: "none", display: "inline-block", width: "auto", padding: "14px 20px" }}>
+          <Link to="/" style={{ ...ctaStyle, textDecoration: "none", display: "inline-block", width: "auto", padding: "14px 20px" }}>
             Start a decision
           </Link>
         </div>

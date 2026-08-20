@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ACCENT } from "../theme";
+import { useAuth } from "../context/AuthContext";
+import { useDecision } from "../context/DecisionContext";
+import { initials } from "../store/auth";
 
 const DECISION_ROUTES = [
-  "/decision/new",
   "/decision/classify",
   "/decision/processing",
   "/decision/results",
@@ -11,21 +13,34 @@ const DECISION_ROUTES = [
   "/decision/brief",
 ];
 
-const TAB_NAV = [
-  { to: "/", label: "Home", icon: "◇", match: (p: string) => p === "/" },
-  { to: "/decision/new", label: "New", icon: "+", match: (p: string) => DECISION_ROUTES.includes(p) },
-  { to: "/history", label: "History", icon: "≡", match: (p: string) => p === "/history" },
-];
-
-const RAIL_NAV = [
-  { to: "/", label: "Home", match: (p: string) => p === "/" },
-  { to: "/decision/new", label: "New decision", match: (p: string) => DECISION_ROUTES.includes(p) },
-  { to: "/history", label: "History", match: (p: string) => p === "/history" },
-  { to: "/library", label: "Library", match: (p: string) => p === "/library" },
-];
-
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { currentProfile, signOut } = useAuth();
+  const { startNew } = useDecision();
+
+  const goNew = () => {
+    startNew();
+    navigate("/");
+  };
+
+  const switchProfile = () => {
+    signOut();
+    navigate("/login");
+  };
+
+  const TAB_NAV = [
+    { key: "home", label: "Home", icon: "◇", to: "/", match: (p: string) => p === "/" },
+    { key: "new", label: "New", icon: "+", onClick: goNew, match: (p: string) => DECISION_ROUTES.includes(p) },
+    { key: "history", label: "History", icon: "≡", to: "/history", match: (p: string) => p === "/history" },
+  ];
+
+  const RAIL_NAV = [
+    { key: "home", label: "Home", to: "/", match: (p: string) => p === "/" },
+    { key: "new", label: "New decision", onClick: goNew, match: (p: string) => DECISION_ROUTES.includes(p) },
+    { key: "history", label: "History", to: "/history", match: (p: string) => p === "/history" },
+    { key: "library", label: "Library", to: "/library", match: (p: string) => p === "/library" },
+  ];
 
   return (
     <div
@@ -37,23 +52,60 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       <aside className="rail-nav" style={railStyle}>
         <div style={{ padding: "0 10px 18px", fontSize: 15, fontWeight: 700, letterSpacing: ".02em" }}>Decidr</div>
-        {RAIL_NAV.map((n) => (
-          <Link key={n.to} to={n.to} style={railBtnStyle(n.match(pathname))}>
-            {n.label}
-          </Link>
-        ))}
-        <div
-          style={{
-            marginTop: "auto",
-            padding: "12px 10px",
-            borderTop: "1px solid var(--d-hairline-2)",
-            fontSize: 12,
-            fontWeight: 350,
-            color: "var(--gray-300)",
-          }}
-        >
-          3 free decisions left this week
-        </div>
+        {RAIL_NAV.map((n) =>
+          n.to ? (
+            <Link key={n.key} to={n.to} style={railBtnStyle(n.match(pathname))}>
+              {n.label}
+            </Link>
+          ) : (
+            <button key={n.key} onClick={n.onClick} style={{ ...railBtnStyle(n.match(pathname)), width: "100%" }}>
+              {n.label}
+            </button>
+          ),
+        )}
+        {currentProfile && (
+          <button
+            onClick={switchProfile}
+            style={{
+              marginTop: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px",
+              borderTop: "1px solid var(--d-hairline-2)",
+              border: "none",
+              borderRadius: 0,
+              background: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              textAlign: "left",
+            }}
+          >
+            <span
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: ACCENT,
+                color: "var(--gray-950)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 11,
+                fontWeight: 700,
+                flex: "none",
+              }}
+            >
+              {initials(currentProfile.name)}
+            </span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray-50)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {currentProfile.name}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)" }}>Switch profile</span>
+            </span>
+          </button>
+        )}
       </aside>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -62,11 +114,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="tab-nav" style={tabNavStyle}>
           {TAB_NAV.map((n) => {
             const active = n.match(pathname);
-            return (
-              <Link key={n.to} to={n.to} style={tabBtnStyle(active)}>
+            return n.to ? (
+              <Link key={n.key} to={n.to} style={tabBtnStyle(active)}>
                 <span style={{ fontSize: 17, lineHeight: 1 }}>{n.icon}</span>
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".02em" }}>{n.label}</span>
               </Link>
+            ) : (
+              <button key={n.key} onClick={n.onClick} style={tabBtnStyle(active)}>
+                <span style={{ fontSize: 17, lineHeight: 1 }}>{n.icon}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".02em" }}>{n.label}</span>
+              </button>
             );
           })}
         </nav>

@@ -22,7 +22,7 @@ export default function Results() {
   }, [matched]);
 
   if (!decision || matched.length === 0) {
-    return <Navigate to="/decision/new" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const active = matched.find((m) => m.model.id === activeModelId) ?? matched[0];
