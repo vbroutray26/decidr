@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { backButtonStyle, ctaStyle, ghostStyle, uppercaseLabel } from "../theme";
+import { ACCENT, backButtonStyle, ctaStyle, ghostStyle, uppercaseLabel } from "../theme";
 import { decisionTitle, REVERSIBILITY_LABEL } from "../domain/structure";
 import { synthesize } from "../domain/synthesize";
+import { levelFor } from "../domain/levels";
 import { useDecision } from "../context/DecisionContext";
 
 const TODAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
 
 export default function Brief() {
   const navigate = useNavigate();
-  const { decision, matched, leanFor, saveCurrentDecision } = useDecision();
+  const { decision, matched, leanFor, saveCurrentDecision, stats, lastEarned, clearLastEarned } = useDecision();
+  const [saved, setSaved] = useState(false);
 
   if (!decision || matched.length === 0) return <Navigate to="/" replace />;
 
@@ -17,8 +20,15 @@ export default function Brief() {
 
   const handleSave = () => {
     saveCurrentDecision();
+    setSaved(true);
+  };
+
+  const goToHistory = () => {
+    clearLastEarned();
     navigate("/history");
   };
+
+  const level = levelFor(stats.totalPoints);
 
   return (
     <div style={{ padding: "22px 22px 34px", display: "flex", flexDirection: "column", gap: 18, maxWidth: 640, margin: "0 auto" }} className="rise">
@@ -72,12 +82,58 @@ export default function Brief() {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={handleSave} style={ctaStyle}>
-          Save to history
-        </button>
-        <button style={ghostStyle}>Share</button>
-      </div>
+      {saved && lastEarned ? (
+        <div
+          style={{
+            border: `1px solid ${ACCENT}`,
+            borderRadius: 14,
+            padding: 18,
+            background: "var(--d-surface-2)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+          className="rise"
+        >
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: ACCENT }}>Saved</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: ACCENT }}>+{lastEarned.total} pts</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <PointsLine label="Completed the decision" value={lastEarned.base} />
+            {lastEarned.biasBonus > 0 && <PointsLine label="Bias flags acknowledged" value={lastEarned.biasBonus} />}
+            {lastEarned.engagementBonus > 0 && <PointsLine label="Adjusted the numbers yourself" value={lastEarned.engagementBonus} />}
+            {lastEarned.streakBonus > 0 && <PointsLine label={`${stats.currentStreak}-day streak`} value={lastEarned.streakBonus} />}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 10, borderTop: "1px solid var(--d-hairline-2)" }}>
+            <span style={{ fontSize: 13, fontWeight: 400, color: "var(--gray-200)" }}>
+              {stats.totalPoints} pts total · {level.title}
+            </span>
+            {level.pointsToNext !== null && (
+              <span style={{ fontSize: 12, fontWeight: 350, color: "var(--gray-300)" }}>{level.pointsToNext} to {level.next?.title}</span>
+            )}
+          </div>
+          <button onClick={goToHistory} style={ctaStyle}>
+            View history
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={handleSave} style={ctaStyle}>
+            Save to history
+          </button>
+          <button style={ghostStyle}>Share</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PointsLine({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <span style={{ fontSize: 13, fontWeight: 350, color: "var(--gray-300)" }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--gray-100)" }}>+{value}</span>
     </div>
   );
 }

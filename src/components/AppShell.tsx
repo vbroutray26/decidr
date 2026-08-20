@@ -36,8 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   ];
 
   const RAIL_NAV = [
-    { key: "home", label: "Home", to: "/", match: (p: string) => p === "/" },
-    { key: "new", label: "New decision", onClick: goNew, match: (p: string) => DECISION_ROUTES.includes(p) },
+    { key: "home", label: "Home", to: "/", match: (p: string) => p === "/" || DECISION_ROUTES.includes(p) },
     { key: "history", label: "History", to: "/history", match: (p: string) => p === "/history" },
     { key: "library", label: "Library", to: "/library", match: (p: string) => p === "/library" },
   ];
@@ -52,17 +51,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       <aside className="rail-nav" style={railStyle}>
         <div style={{ padding: "0 10px 18px", fontSize: 15, fontWeight: 700, letterSpacing: ".02em" }}>Decidr</div>
-        {RAIL_NAV.map((n) =>
-          n.to ? (
-            <Link key={n.key} to={n.to} style={railBtnStyle(n.match(pathname))}>
-              {n.label}
-            </Link>
-          ) : (
-            <button key={n.key} onClick={n.onClick} style={{ ...railBtnStyle(n.match(pathname)), width: "100%" }}>
-              {n.label}
-            </button>
-          ),
-        )}
+        {RAIL_NAV.map((n) => (
+          <Link key={n.key} to={n.to} style={railBtnStyle(n.match(pathname))}>
+            {n.label}
+          </Link>
+        ))}
         {currentProfile && (
           <button
             onClick={switchProfile}

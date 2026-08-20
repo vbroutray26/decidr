@@ -151,3 +151,21 @@ export interface UserProfile {
   email?: string;
   createdAt: string;
 }
+
+/** Gamified scoring, per local profile — a lightweight motivational layer,
+ * not a claim about decision quality. */
+export interface UserStats {
+  totalPoints: number;
+  decisionsCount: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastSavedDate: string | null;
+}
+
+export interface PointsBreakdown {
+  base: number;
+  biasBonus: number;
+  engagementBonus: number;
+  streakBonus: number;
+  total: number;
+}

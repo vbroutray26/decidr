@@ -2,13 +2,15 @@ import { Link } from "react-router-dom";
 import { ctaStyle } from "../theme";
 import { relativeTime } from "../store/history";
 import { useDecision } from "../context/DecisionContext";
+import { StatsStrip } from "../components/StatsStrip";
 
 export default function History() {
-  const { history } = useDecision();
+  const { history, stats } = useDecision();
 
   return (
     <div style={{ padding: "26px 22px 34px", display: "flex", flexDirection: "column", gap: 20, maxWidth: 640, margin: "0 auto" }} className="rise">
       <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: "-.02em" }}>History</span>
+      {stats.decisionsCount > 0 && <StatsStrip stats={stats} />}
 
       {history.length === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "flex-start" }}>

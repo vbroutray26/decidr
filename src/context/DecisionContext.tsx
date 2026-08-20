@@ -1,12 +1,24 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { structureDecision, decisionTitle } from "../domain/structure";
 import { matchModels } from "../domain/match";
 import { pickBiases } from "../domain/biases";
 import { defaultInputsFor, computeLean } from "../domain/apply";
 import { synthesize } from "../domain/synthesize";
 import { appendHistory, loadHistory, newDecisionId } from "../store/history";
+import { loadStats, recordDecision } from "../store/stats";
 import { useAuth } from "./AuthContext";
-import type { BiasFlag, DecisionObject, Lean, MatchedModel, ModelUserInputs, SavedDecision } from "../domain/types";
+import type {
+  BiasFlag,
+  DecisionObject,
+  Lean,
+  MatchedModel,
+  ModelUserInputs,
+  PointsBreakdown,
+  SavedDecision,
+  UserStats,
+} from "../domain/types";
+
+const EMPTY_STATS: UserStats = { totalPoints: 0, decisionsCount: 0, currentStreak: 0, longestStreak: 0, lastSavedDate: null };
 
 interface DecisionState {
   rawText: string;
@@ -32,6 +44,10 @@ interface DecisionState {
   history: SavedDecision[];
   saveCurrentDecision: () => SavedDecision;
 
+  stats: UserStats;
+  lastEarned: PointsBreakdown | null;
+  clearLastEarned: () => void;
+
   startNew: () => void;
 }
 
@@ -47,10 +63,14 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
   const [activeModelId, setActiveModelId] = useState<string | null>(null);
   const [checkedBiases, setCheckedBiases] = useState<Record<string, boolean>>({});
   const [history, setHistory] = useState<SavedDecision[]>([]);
+  const [stats, setStats] = useState<UserStats>(EMPTY_STATS);
+  const [lastEarned, setLastEarned] = useState<PointsBreakdown | null>(null);
+  const engagedWithVisuals = useRef(false);
 
-  // Saved decisions are scoped per local profile — reload whenever the signed-in profile changes.
+  // Saved decisions and stats are scoped per local profile — reload whenever the signed-in profile changes.
   useEffect(() => {
     setHistory(currentProfile ? loadHistory(currentProfile.id) : []);
+    setStats(currentProfile ? loadStats(currentProfile.id) : EMPTY_STATS);
   }, [currentProfile]);
 
   const structureNow = (): DecisionObject => {
@@ -73,9 +93,11 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
     setBiasFlags(pickBiases(decision));
     setCheckedBiases({});
     setActiveModelId(m[0]?.model.id ?? null);
+    engagedWithVisuals.current = false;
   };
 
   const updateInputs = (modelId: string, patch: ModelUserInputs) => {
+    engagedWithVisuals.current = true;
     setInputsByModelId((prev) => ({ ...prev, [modelId]: { ...prev[modelId], ...patch } }));
   };
 
@@ -102,6 +124,15 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
       leaning: synthesis.leaning,
     };
     setHistory(appendHistory(currentProfile.id, entry));
+
+    const biasesChecked = Object.values(checkedBiases).filter(Boolean).length;
+    const { stats: newStats, earned } = recordDecision(currentProfile.id, {
+      biasesChecked,
+      engagedWithVisuals: engagedWithVisuals.current,
+    });
+    setStats(newStats);
+    setLastEarned(earned);
+
     return entry;
   };
 
@@ -113,6 +144,7 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
     setCheckedBiases({});
     setActiveModelId(null);
     setRawText("");
+    engagedWithVisuals.current = false;
   };
 
   const value = useMemo<DecisionState>(
@@ -134,10 +166,13 @@ export function DecisionProvider({ children }: { children: ReactNode }) {
       toggleBias,
       history,
       saveCurrentDecision,
+      stats,
+      lastEarned,
+      clearLastEarned: () => setLastEarned(null),
       startNew,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rawText, decision, matched, biasFlags, inputsByModelId, activeModelId, checkedBiases, history, currentProfile],
+    [rawText, decision, matched, biasFlags, inputsByModelId, activeModelId, checkedBiases, history, stats, lastEarned, currentProfile],
   );
 
   return <DecisionContext.Provider value={value}>{children}</DecisionContext.Provider>;

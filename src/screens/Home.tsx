@@ -7,6 +7,7 @@ import { initials } from "../store/auth";
 import { useDecision } from "../context/DecisionContext";
 import { useAuth } from "../context/AuthContext";
 import { useSpeechToText } from "../hooks/useSpeechToText";
+import { StatsStrip } from "../components/StatsStrip";
 
 const WEEKDAY = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
 const PROMPTS = ["What are you weighing it against?", "What's the deadline?", "What would make it easy?"];
@@ -22,7 +23,7 @@ const MODEL_OF_THE_DAY = MODELS[dayOfYear(new Date()) % MODELS.length];
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { history, rawText, setRawText, structureNow } = useDecision();
+  const { history, rawText, setRawText, structureNow, stats } = useDecision();
   const { currentProfile, signOut } = useAuth();
   const recent = history.slice(0, 2);
   const canContinue = rawText.trim().length > 0;
@@ -107,6 +108,8 @@ export default function Home() {
         <br />
         <span style={{ color: "var(--gray-400)" }}>Tell me the decision, I'll bring the models.</span>
       </h1>
+
+      <StatsStrip stats={stats} />
 
       <div
         style={{
