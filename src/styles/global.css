@@ -1,0 +1,112 @@
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+
+/* Dark-canvas surface steps, derived from the CSM gray ramp (product plan §9 asks
+   for a near-black base the light token set doesn't define). */
+:root {
+  --d-page: #0a0a0b;
+  --d-canvas: #101012;
+  --d-surface: #141416;
+  --d-surface-2: #16171a;
+  --d-raised: #1a1b1e;
+  --d-hairline: #1c1d20;
+  --d-hairline-2: #202126;
+  --d-bezel: #1c1d20;
+  --d-chrome: #0f0f11;
+  --d-chrome-2: #111113;
+  --d-border-hover: #3d3f45;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--d-page);
+  color: var(--gray-50);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--orange-500);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--orange-300);
+}
+
+::-webkit-scrollbar {
+  width: 0;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--gray-700);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--orange-500);
+  margin-top: -6px;
+}
+input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--gray-700);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--orange-500);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.3s ease;
+}
