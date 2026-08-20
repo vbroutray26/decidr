@@ -30,6 +30,22 @@ const CONFIG: Record<string, AxisConfig> = {
     ySliderLabel: "How important it is",
     editableX: true,
   },
+  "scenario-planning": {
+    title: "2×2 · two key uncertainties",
+    xLabel: ["factor 1 resolves badly", "factor 1 resolves well"],
+    yLabel: ["factor 2 resolves badly", "factor 2 resolves well"],
+    xSliderLabel: "How the first uncertainty leans",
+    ySliderLabel: "How the second uncertainty leans",
+    editableX: true,
+  },
+  "hard-choice-model": {
+    title: "2×2 · impact vs. clarity of options",
+    xLabel: ["low impact", "high impact"],
+    yLabel: ["options unclear", "options clear"],
+    xSliderLabel: "How much this decision matters",
+    ySliderLabel: "How clear the options already are",
+    editableX: true,
+  },
 };
 
 export function TwoByTwoMatrix({
