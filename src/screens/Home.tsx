@@ -1,10 +1,23 @@
 import { Link } from "react-router-dom";
 import { ACCENT, screenStyle, uppercaseLabel } from "../theme";
-import { RECENT } from "../data/decision";
+import { MODELS } from "../domain/models";
+import { relativeTime } from "../store/history";
+import { useDecision } from "../context/DecisionContext";
 
 const WEEKDAY = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
 
+function dayOfYear(d: Date): number {
+  const start = new Date(d.getFullYear(), 0, 0);
+  const diff = d.getTime() - start.getTime();
+  return Math.floor(diff / 86400000);
+}
+
+const MODEL_OF_THE_DAY = MODELS[dayOfYear(new Date()) % MODELS.length];
+
 export default function Home() {
+  const { history } = useDecision();
+  const recent = history.slice(0, 2);
+
   return (
     <div style={{ ...screenStyle, padding: "28px 22px 34px", gap: 26 }} className="rise">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -81,7 +94,8 @@ export default function Home() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <span style={uppercaseLabel}>Model of the day</span>
-        <div
+        <Link
+          to="/library"
           style={{
             border: "1px solid var(--d-hairline-2)",
             borderLeft: `2px solid ${ACCENT}`,
@@ -91,42 +105,46 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             gap: 7,
+            color: "inherit",
+            textDecoration: "none",
           }}
         >
-          <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.01em" }}>Inversion</span>
-          <span style={{ fontSize: 14, fontWeight: 350, lineHeight: 1.5, color: "var(--gray-200)" }}>
-            Instead of asking how to succeed, ask what would guarantee failure — then avoid that.
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 350, color: "var(--gray-300)" }}>Carl Jacobi, popularised by Charlie Munger</span>
-        </div>
+          <span style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-.01em" }}>{MODEL_OF_THE_DAY.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 350, lineHeight: 1.5, color: "var(--gray-200)" }}>{MODEL_OF_THE_DAY.oneLine}</span>
+          <span style={{ fontSize: 12, fontWeight: 350, color: "var(--gray-300)" }}>{MODEL_OF_THE_DAY.originator}</span>
+        </Link>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <span style={uppercaseLabel}>Recent</span>
-        {RECENT.map((r) => (
-          <Link
-            key={r.title}
-            to="/history"
-            style={{
-              textAlign: "left",
-              background: "none",
-              border: "none",
-              borderBottom: "1px solid var(--d-hairline)",
-              padding: "13px 2px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              color: "inherit",
-              width: "100%",
-              textDecoration: "none",
-            }}
-          >
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 400, lineHeight: 1.35 }}>{r.title}</span>
-            <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)", whiteSpace: "nowrap" }}>{r.when}</span>
-          </Link>
-        ))}
+        {recent.length === 0 ? (
+          <span style={{ fontSize: 13, fontWeight: 350, color: "var(--gray-300)" }}>Nothing yet — your first saved decision will show up here.</span>
+        ) : (
+          recent.map((r) => (
+            <Link
+              key={r.id}
+              to="/history"
+              style={{
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                borderBottom: "1px solid var(--d-hairline)",
+                padding: "13px 2px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                color: "inherit",
+                width: "100%",
+                textDecoration: "none",
+              }}
+            >
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 400, lineHeight: 1.35 }}>{r.title}</span>
+              <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)", whiteSpace: "nowrap" }}>{relativeTime(r.savedAt)}</span>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

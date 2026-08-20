@@ -1,12 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { backButtonStyle, ctaDisabledStyle, ctaStyle, screenStyle, uppercaseLabel } from "../theme";
-import { PROMPTS } from "../data/decision";
 import { useDecision } from "../context/DecisionContext";
+
+const PROMPTS = ["What are you weighing it against?", "What's the deadline?", "What would make it easy?"];
 
 export default function Capture() {
   const navigate = useNavigate();
-  const { decisionText, setDecisionText } = useDecision();
-  const canContinue = decisionText.trim().length > 0;
+  const { rawText, setRawText, structureNow } = useDecision();
+  const canContinue = rawText.trim().length > 0;
+
+  const handleContinue = () => {
+    if (!canContinue) return;
+    structureNow();
+    navigate("/decision/classify");
+  };
 
   return (
     <div style={{ ...screenStyle, minHeight: "100%" }} className="rise">
@@ -22,8 +29,8 @@ export default function Capture() {
       </div>
 
       <textarea
-        value={decisionText}
-        onChange={(e) => setDecisionText(e.target.value)}
+        value={rawText}
+        onChange={(e) => setRawText(e.target.value)}
         placeholder="Should I take the job offer in Singapore, or stay and wait for my promotion?"
         rows={5}
         style={{
@@ -84,11 +91,7 @@ export default function Capture() {
       </div>
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-        <button
-          onClick={() => canContinue && navigate("/decision/classify")}
-          disabled={!canContinue}
-          style={canContinue ? ctaStyle : ctaDisabledStyle}
-        >
+        <button onClick={handleContinue} disabled={!canContinue} style={canContinue ? ctaStyle : ctaDisabledStyle}>
           Continue
         </button>
         <span style={{ textAlign: "center", fontSize: 12, fontWeight: 350, color: "var(--gray-300)" }}>

@@ -1,13 +1,89 @@
-import { useNavigate } from "react-router-dom";
+import type { CSSProperties, ReactNode } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { ACCENT, backButtonStyle, ctaStyle, screenStyle, uppercaseLabel } from "../theme";
-import { CLASSIFICATION } from "../data/decision";
+import { DECISION_TYPE_LABEL, REVERSIBILITY_LABEL } from "../domain/structure";
+import type { DecisionType, Reversibility, Stakes } from "../domain/types";
 import { useDecision } from "../context/DecisionContext";
 
-const PROMOTION_OPTIONS = ["Confirmed in writing", "Verbally implied", "My assumption"];
+const DECISION_TYPES: DecisionType[] = [
+  "binary",
+  "multi-option",
+  "resource-allocation",
+  "timing",
+  "risk",
+  "negotiation",
+  "values-conflict",
+];
+const REVERSIBILITIES: Reversibility[] = ["one-way", "two-way", "uncertain"];
+const STAKES: Stakes[] = ["low", "medium", "high"];
 
 export default function Classify() {
   const navigate = useNavigate();
-  const { promotionStatus, setPromotionStatus } = useDecision();
+  const { decision, updateDecision, matchNow } = useDecision();
+
+  if (!decision) return <Navigate to="/decision/new" replace />;
+
+  const rows: { key: string; label: string; content: ReactNode }[] = [
+    {
+      key: "type",
+      label: "Type",
+      content: (
+        <select
+          value={decision.decisionType}
+          onChange={(e) => updateDecision({ decisionType: e.target.value as DecisionType })}
+          style={selectStyle}
+        >
+          {DECISION_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {DECISION_TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: "reversibility",
+      label: "Reversibility",
+      content: (
+        <select
+          value={decision.reversibility}
+          onChange={(e) => updateDecision({ reversibility: e.target.value as Reversibility })}
+          style={selectStyle}
+        >
+          {REVERSIBILITIES.map((r) => (
+            <option key={r} value={r}>
+              {REVERSIBILITY_LABEL[r]}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: "stakes",
+      label: "Stakes",
+      content: (
+        <select value={decision.stakes} onChange={(e) => updateDecision({ stakes: e.target.value as Stakes })} style={selectStyle}>
+          {STAKES.map((s) => (
+            <option key={s} value={s}>
+              {s[0].toUpperCase() + s.slice(1)}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: "horizon",
+      label: "Horizon",
+      content: (
+        <input value={decision.horizon} onChange={(e) => updateDecision({ horizon: e.target.value })} style={textInputStyle} />
+      ),
+    },
+    {
+      key: "tension",
+      label: "Tension",
+      content: <input value={decision.tension} onChange={(e) => updateDecision({ tension: e.target.value })} style={textInputStyle} />,
+    },
+  ];
 
   return (
     <div style={{ ...screenStyle, minHeight: "100%" }} className="rise">
@@ -22,27 +98,30 @@ export default function Classify() {
         Here's how I'm reading your decision. Correct me if I'm off.
       </div>
 
+      <div style={{ border: "1px solid var(--gray-700)", borderRadius: 14, background: "var(--d-surface)", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--gray-300)" }}>
+          Named options
+        </span>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "var(--gray-300)" }}>Option A</span>
+          <input value={decision.optionA} onChange={(e) => updateDecision({ optionA: e.target.value })} style={textInputStyle} />
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "var(--gray-300)" }}>Option B</span>
+          <input value={decision.optionB} onChange={(e) => updateDecision({ optionB: e.target.value })} style={textInputStyle} />
+        </label>
+      </div>
+
       <div style={{ border: "1px solid var(--d-hairline-2)", borderRadius: 14, background: "var(--d-surface)", overflow: "hidden" }}>
-        {CLASSIFICATION.map((c) => (
+        {rows.map((row) => (
           <div
-            key={c.k}
-            style={{
-              padding: "14px 16px",
-              borderBottom: "1px solid var(--d-hairline)",
-              display: "flex",
-              alignItems: "baseline",
-              gap: 14,
-            }}
+            key={row.key}
+            style={{ padding: "14px 16px", borderBottom: "1px solid var(--d-hairline)", display: "flex", alignItems: "center", gap: 14 }}
           >
             <span style={{ width: 104, flex: "none", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--gray-300)" }}>
-              {c.k}
+              {row.label}
             </span>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 400, lineHeight: 1.4, color: "var(--gray-50)" }}>{c.v}</span>
-            <button
-              style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", cursor: "pointer", fontSize: 12, fontWeight: 350, color: ACCENT }}
-            >
-              Edit
-            </button>
+            <div style={{ flex: 1 }}>{row.content}</div>
           </div>
         ))}
       </div>
@@ -55,44 +134,49 @@ export default function Classify() {
           padding: 16,
           display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: 8,
           background: "var(--d-surface-2)",
         }}
       >
         <span style={{ fontSize: 15, fontWeight: 400, lineHeight: 1.45 }}>
-          One thing I'm missing: is the promotion confirmed, or is it your expectation?
+          This is a rule-based read of your text, not a guess dressed up as certainty — every field above is yours to correct, and
+          the correction feeds the matching that follows.
         </span>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {PROMOTION_OPTIONS.map((opt) => {
-            const active = promotionStatus ? promotionStatus === opt : opt === PROMOTION_OPTIONS[0];
-            return (
-              <button
-                key={opt}
-                onClick={() => setPromotionStatus(opt)}
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: 999,
-                  fontFamily: "inherit",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: active ? 600 : 400,
-                  background: active ? "var(--gray-800)" : "transparent",
-                  border: active ? "none" : "1px solid var(--gray-700)",
-                  color: active ? "var(--gray-50)" : "var(--gray-300)",
-                }}
-              >
-                {opt}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <div style={{ marginTop: "auto" }}>
-        <button onClick={() => navigate("/decision/processing")} style={ctaStyle}>
+        <button
+          onClick={() => {
+            matchNow();
+            navigate("/decision/processing");
+          }}
+          style={ctaStyle}
+        >
           Find the models
         </button>
       </div>
     </div>
   );
 }
+
+const selectStyle: CSSProperties = {
+  width: "100%",
+  background: "var(--d-raised)",
+  border: "1px solid var(--gray-700)",
+  borderRadius: 8,
+  color: "var(--gray-50)",
+  padding: "8px 10px",
+  fontSize: 14,
+  fontFamily: "inherit",
+};
+
+const textInputStyle: CSSProperties = {
+  width: "100%",
+  background: "var(--d-raised)",
+  border: "1px solid var(--gray-700)",
+  borderRadius: 8,
+  color: "var(--gray-50)",
+  padding: "8px 10px",
+  fontSize: 14,
+  fontFamily: "inherit",
+};

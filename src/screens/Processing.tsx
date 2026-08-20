@@ -1,31 +1,39 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { ACCENT, uppercaseLabel } from "../theme";
-import { PROC_STEPS } from "../data/decision";
+import { MODELS } from "../domain/models";
+import { useDecision } from "../context/DecisionContext";
+
+const PROC_STEPS = ["Reading your words", "Structuring the decision", "Retrieving candidate models", "Selecting for tension"];
 
 export default function Processing() {
   const navigate = useNavigate();
+  const { decision, matched } = useDecision();
   const [proc, setProc] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setProc((p) => Math.min(p + 1, PROC_STEPS.length - 1));
-    }, 620);
+    }, 500);
     const timeout = setTimeout(() => {
       clearInterval(interval);
       navigate("/decision/results");
-    }, 2700);
+    }, 2200);
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
   }, [navigate]);
 
+  if (!decision || matched.length === 0) {
+    return <Navigate to="/decision/new" replace />;
+  }
+
   return (
     <div style={{ padding: 22, minHeight: "100%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 30, maxWidth: 640, margin: "0 auto" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={uppercaseLabel}>Working</span>
-        <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: "-.01em" }}>Scanning 164 models</span>
+        <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: "-.01em" }}>Scanning {MODELS.length} models</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {PROC_STEPS.map((label, i) => (

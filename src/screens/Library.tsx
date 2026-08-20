@@ -1,15 +1,35 @@
 import { useMemo, useState } from "react";
 import { chipStyle } from "../theme";
-import { LIBRARY, LIBRARY_DOMAINS } from "../data/decision";
+import { MODELS } from "../domain/models";
+import type { OriginDomain } from "../domain/types";
+
+const DOMAINS: (OriginDomain | "All")[] = [
+  "All",
+  "psychology",
+  "economics",
+  "probability",
+  "systems",
+  "strategy",
+  "philosophy",
+  "structuring",
+  "negotiation",
+  "management",
+  "personal",
+];
 
 export default function Library() {
-  const [domain, setDomain] = useState("All");
+  const [domain, setDomain] = useState<OriginDomain | "All">("All");
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return LIBRARY.filter((l) => domain === "All" || l.domain === domain).filter(
-      (l) => !q || l.name.toLowerCase().includes(q) || l.def.toLowerCase().includes(q),
+    return MODELS.filter((m) => domain === "All" || m.domain === domain).filter(
+      (m) =>
+        !q ||
+        m.name.toLowerCase().includes(q) ||
+        m.oneLine.toLowerCase().includes(q) ||
+        m.aliases.some((a) => a.toLowerCase().includes(q)) ||
+        m.originator.toLowerCase().includes(q),
     );
   }, [domain, query]);
 
@@ -19,7 +39,7 @@ export default function Library() {
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search 164 models…"
+        placeholder={`Search ${MODELS.length} models…`}
         style={{
           border: "1px solid var(--gray-700)",
           borderRadius: 10,
@@ -32,25 +52,26 @@ export default function Library() {
         }}
       />
       <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4 }}>
-        {LIBRARY_DOMAINS.map((d) => (
+        {DOMAINS.map((d) => (
           <button key={d} onClick={() => setDomain(d)} style={chipStyle(domain === d)}>
-            {d}
+            {d === "All" ? "All" : d[0].toUpperCase() + d.slice(1)}
           </button>
         ))}
       </div>
-      {results.map((l) => (
-        <div key={l.name} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "13px 0", borderBottom: "1px solid var(--d-raised)" }}>
+      <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)" }}>
+        {results.length} model{results.length === 1 ? "" : "s"}
+      </span>
+      {results.map((m) => (
+        <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "13px 0", borderBottom: "1px solid var(--d-raised)" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>{l.name}</span>
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--gray-300)" }}>{l.domain}</span>
+            <span style={{ flex: 1, fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>{m.name}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--gray-300)" }}>{m.domain}</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 350, lineHeight: 1.5, color: "var(--gray-300)" }}>{l.def}</span>
-          <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)" }}>{l.origin}</span>
+          <span style={{ fontSize: 13, fontWeight: 350, lineHeight: 1.5, color: "var(--gray-300)" }}>{m.oneLine}</span>
+          <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)" }}>{m.originator}</span>
         </div>
       ))}
-      {results.length === 0 && (
-        <span style={{ fontSize: 13, fontWeight: 350, color: "var(--gray-300)" }}>No models match that search yet.</span>
-      )}
+      {results.length === 0 && <span style={{ fontSize: 13, fontWeight: 350, color: "var(--gray-300)" }}>No models match that search yet.</span>}
     </div>
   );
 }
