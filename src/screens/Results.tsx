@@ -4,12 +4,7 @@ import { ACCENT, backButtonStyle, chipStyle, ctaStyle, uppercaseLabel } from "..
 import { appliedText, misleadsText } from "../domain/apply";
 import { DECISION_TYPE_LABEL } from "../domain/structure";
 import { useDecision } from "../context/DecisionContext";
-import { DecisionTreeVisual } from "../components/visuals/DecisionTreeVisual";
-import { WeightedScorecard } from "../components/visuals/WeightedScorecard";
-import { ConsequenceChainVisual } from "../components/visuals/ConsequenceChainVisual";
-import { TwoByTwoMatrix } from "../components/visuals/TwoByTwoMatrix";
-import { FeedbackLoopVisual } from "../components/visuals/FeedbackLoopVisual";
-import { NarrativeVisual } from "../components/visuals/NarrativeVisual";
+import { ModelVisual } from "../components/ModelVisual";
 
 export default function Results() {
   const navigate = useNavigate();
@@ -29,61 +24,6 @@ export default function Results() {
   const model = active.model;
   const inputs = inputsByModelId[model.id] ?? {};
   const contradictionCount = matched.filter((m) => m.isContrarian).length;
-
-  const renderVisual = () => {
-    switch (model.visualTemplate) {
-      case "decision-tree":
-        return inputs.decisionTree ? (
-          <DecisionTreeVisual
-            optionA={decision.optionA}
-            optionB={decision.optionB}
-            inputs={inputs.decisionTree}
-            onChange={(patch) => updateInputs(model.id, { decisionTree: { ...inputs.decisionTree!, ...patch } })}
-          />
-        ) : null;
-      case "weighted-scorecard":
-        return inputs.scorecard ? (
-          <WeightedScorecard
-            optionA={decision.optionA}
-            optionB={decision.optionB}
-            criteria={inputs.scorecard}
-            onChange={(i, patch) => {
-              const next = inputs.scorecard!.map((c, idx) => (idx === i ? { ...c, ...patch } : c));
-              updateInputs(model.id, { scorecard: next });
-            }}
-          />
-        ) : null;
-      case "two-by-two":
-        return inputs.twoByTwo ? (
-          <TwoByTwoMatrix
-            modelId={model.id}
-            optionA={decision.optionA}
-            optionB={decision.optionB}
-            inputs={inputs.twoByTwo}
-            onChange={(patch) => updateInputs(model.id, { twoByTwo: { ...inputs.twoByTwo!, ...patch } })}
-          />
-        ) : null;
-      case "consequence-chain":
-        return inputs.chain ? (
-          <ConsequenceChainVisual
-            chain={inputs.chain}
-            onChange={(i, patch) => {
-              const next = inputs.chain!.map((c, idx) => (idx === i ? { ...c, ...patch } : c));
-              updateInputs(model.id, { chain: next });
-            }}
-          />
-        ) : null;
-      case "feedback-loop":
-        return inputs.feedbackLoop ? (
-          <FeedbackLoopVisual
-            inputs={inputs.feedbackLoop}
-            onChange={(patch) => updateInputs(model.id, { feedbackLoop: { ...inputs.feedbackLoop!, ...patch } })}
-          />
-        ) : null;
-      default:
-        return <NarrativeVisual model={model} />;
-    }
-  };
 
   return (
     <div style={{ padding: "22px 0 34px", display: "flex", flexDirection: "column", gap: 18, maxWidth: 640, margin: "0 auto" }} className="rise">
@@ -150,7 +90,15 @@ export default function Results() {
             </span>
           </div>
 
-          <div style={{ padding: 20, borderBottom: "1px solid var(--d-hairline)", background: "var(--d-canvas)" }}>{renderVisual()}</div>
+          <div style={{ padding: 20, borderBottom: "1px solid var(--d-hairline)", background: "var(--d-canvas)" }}>
+            <ModelVisual
+              model={model}
+              optionA={decision.optionA}
+              optionB={decision.optionB}
+              inputs={inputs}
+              onChange={(patch) => updateInputs(model.id, patch)}
+            />
+          </div>
 
           <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

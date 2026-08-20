@@ -38,6 +38,24 @@ function seedChain(decision: DecisionObject): ChainStep[] {
   ];
 }
 
+/** A generic placeholder decision for the Library's "see it in action" preview —
+ * there's no real decision behind it, just enough shape to render the model's
+ * own visual template. */
+export function buildExampleDecision(model: MentalModel): DecisionObject {
+  return {
+    rawText: "An example decision, so you can see how this model behaves.",
+    optionA: "Option A",
+    optionB: "Option B",
+    isSingleOption: false,
+    decisionType: model.decisionTypes[0] ?? "binary",
+    reversibility: model.reversibilityFit?.[0] ?? "uncertain",
+    stakes: model.stakesFit?.[0] ?? "medium",
+    horizon: "Consequences likely run months, not years",
+    tension: "Certainty versus upside",
+    keywords: [],
+  };
+}
+
 export function defaultInputsFor(model: MentalModel, decision: DecisionObject): ModelUserInputs {
   switch (model.visualTemplate) {
     case "decision-tree":

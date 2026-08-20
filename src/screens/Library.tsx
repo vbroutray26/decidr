@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { chipStyle } from "../theme";
 import { MODELS } from "../domain/models";
 import type { OriginDomain } from "../domain/types";
@@ -62,14 +63,26 @@ export default function Library() {
         {results.length} model{results.length === 1 ? "" : "s"}
       </span>
       {results.map((m) => (
-        <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "13px 0", borderBottom: "1px solid var(--d-raised)" }}>
+        <Link
+          key={m.id}
+          to={`/library/${m.id}`}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            padding: "13px 0",
+            borderBottom: "1px solid var(--d-raised)",
+            color: "inherit",
+            textDecoration: "none",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
             <span style={{ flex: 1, fontSize: 15, fontWeight: 600, letterSpacing: "-.01em" }}>{m.name}</span>
             <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--gray-300)" }}>{m.domain}</span>
           </div>
           <span style={{ fontSize: 13, fontWeight: 350, lineHeight: 1.5, color: "var(--gray-300)" }}>{m.oneLine}</span>
           <span style={{ fontSize: 11, fontWeight: 350, color: "var(--gray-300)" }}>{m.originator}</span>
-        </div>
+        </Link>
       ))}
       {results.length === 0 && <span style={{ fontSize: 13, fontWeight: 350, color: "var(--gray-300)" }}>No models match that search yet.</span>}
     </div>

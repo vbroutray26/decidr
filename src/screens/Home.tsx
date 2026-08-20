@@ -1,5 +1,5 @@
-import { useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ACCENT, screenStyle, uppercaseLabel } from "../theme";
 import { MODELS } from "../domain/models";
 import { relativeTime } from "../store/history";
@@ -21,10 +21,21 @@ const MODEL_OF_THE_DAY = MODELS[dayOfYear(new Date()) % MODELS.length];
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { history, rawText, setRawText, structureNow } = useDecision();
   const { currentProfile, signOut } = useAuth();
   const recent = history.slice(0, 2);
   const canContinue = rawText.trim().length > 0;
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const state = location.state as { focusCapture?: boolean } | null;
+    if (state?.focusCapture) {
+      textareaRef.current?.focus();
+      navigate(".", { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const baseTextRef = useRef("");
   const handleSpeechUpdate = useCallback(
@@ -110,6 +121,7 @@ export default function Home() {
         }}
       >
         <textarea
+          ref={textareaRef}
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           placeholder="Should I take the job offer in Singapore, or stay and wait for my promotion?"
@@ -210,7 +222,7 @@ export default function Home() {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <span style={uppercaseLabel}>Model of the day</span>
         <Link
-          to="/library"
+          to={`/library/${MODEL_OF_THE_DAY.id}`}
           style={{
             border: "1px solid var(--d-hairline-2)",
             borderLeft: `2px solid ${ACCENT}`,

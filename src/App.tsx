@@ -11,6 +11,7 @@ import Verdict from "./screens/Verdict";
 import Brief from "./screens/Brief";
 import History from "./screens/History";
 import Library from "./screens/Library";
+import ModelDetail from "./screens/ModelDetail";
 
 function LoginRoute() {
   const { currentProfile } = useAuth();
@@ -33,6 +34,7 @@ function AuthedApp() {
         <Route path="/decision/brief" element={<Brief />} />
         <Route path="/history" element={<History />} />
         <Route path="/library" element={<Library />} />
+        <Route path="/library/:modelId" element={<ModelDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

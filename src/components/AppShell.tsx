@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const goNew = () => {
     startNew();
-    navigate("/");
+    navigate("/", { state: { focusCapture: true } });
   };
 
   const switchProfile = () => {
